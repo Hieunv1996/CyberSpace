@@ -14,7 +14,8 @@ import java.util.Vector;
 public class Process {
     private int k;
     private final ArrayList<Cluster> clusters = new ArrayList<Cluster>();
-    private ArrayList<String> confessions = new ArrayList<String>();
+    private ArrayList<String> nl_confess = new ArrayList<String>();
+    private ArrayList<String> confess = new ArrayList<String>();
     private Set<String> features = new HashSet<String>();
     private ArrayList<ArrayList<String>> cfs_words = new ArrayList<ArrayList<String>>();
     private ArrayList<Vector<Integer>> cfs_vector = new ArrayList<Vector<Integer>>();
@@ -23,13 +24,13 @@ public class Process {
     }
 
     public void readCfs(String url){
-        ConfessionReader confessionReader = new ConfessionReader(url,confessions);
+        ConfessionReader confessionReader = new ConfessionReader(url, nl_confess,confess);
         confessionReader.read();
-        System.out.println("data size: "+confessions.size());
+        System.out.println("data size: "+ nl_confess.size());
     }
 
     public void getFeatures(){
-        Feature feature = new Feature(confessions,features,cfs_words);
+        Feature feature = new Feature(nl_confess,features,cfs_words);
         feature.takeFeatures();
         System.out.println("features size: "+features.size());
     }
@@ -38,7 +39,6 @@ public class Process {
         VSMConfession vsmConfession = new VSMConfession(features,cfs_words);
         cfs_vector = vsmConfession.toVector();
     }
-
     private void init(){
         for (int i = 0;i < k;i++){
             clusters.add(new Cluster(cfs_vector.get(i)));
@@ -56,6 +56,7 @@ public class Process {
 
     private void updateCentros(){
         for (Cluster cluster : clusters){
+            if(cluster.getItems().size() == 0) return;
             Vector<Double> sum = new Vector<Double>();
             Set<Integer> itemlst = cluster.getItems();
             for (Integer i : itemlst){
@@ -78,14 +79,15 @@ public class Process {
             Vector<Integer> v = cfs_vector.get(i);
             double val, minDis = Double.MAX_VALUE;
             int l1 = -1, l2 = -1;
-            for (Cluster cluster : clusters) {
+            for (int i1 = 0; i1 < clusters.size(); i1++) {
+                Cluster cluster = clusters.get(i1);
                 val = cluster.euclidean(v);
-                if (val < minDis){
+                if (val < minDis) {
                     minDis = val;
-                    l1 = i;
+                    l1 = i1;
                 }
-                if(cluster.getItems().contains(i)){
-                    l2 = i;
+                if (cluster.getItems().contains(i)) {
+                    l2 = i1;
                 }
             }
             if(l1 != l2){
@@ -101,13 +103,18 @@ public class Process {
     public void result(String url){
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(url));
-            for (Cluster cluster : clusters){
-                Set<Integer> set = cluster.getItems();
-                for (Integer i : set){
-                    writer.write(cluster + ": " +confessions.get(i));
-                    writer.newLine();
+            for (int i = 0; i < confess.size(); i++) {
+                String con = confess.get(i);
+                writer.write(con);
+                con = con.substring(0,con.length()-1);
+                for (int i1 = 0; i1 < clusters.size(); i1++) {
+                    Cluster cluster = clusters.get(i1);
+                    if (cluster.getItems().contains(i)) {
+                        writer.write(",\"topic\":,\""+i1+"\"}");
+                        writer.write("\n\n");
+                        break;
+                    }
                 }
-                writer.write("\n-----------------------------------------\n");
             }
             writer.close();
         } catch (IOException e) {

@@ -16,6 +16,7 @@ public class Cluster {
         for (Integer i : point){
             v.add(Double.valueOf(i));
         }
+        this.point = v;
         items = new HashSet<Integer>();
     }
 

@@ -11,7 +11,8 @@ public class Feature {
     private ArrayList<String> confessions;
     private Set<String> features;
     private ArrayList<ArrayList<String>> cfs_words;
-    private final int DUPLICATE = 10;
+    private final int DUPLICATE = 20;
+    private Set<String> stopwords = new StopWords("/home/hieunv/Desktop/CyberSpace/ConfessionsClassify/data/stopwords").getStopWords();
 
     public Feature(ArrayList<String> confessions, Set<String> features, ArrayList<ArrayList<String>> cfs_words) {
         this.confessions = confessions;
@@ -22,7 +23,7 @@ public class Feature {
     public void takeFeatures() {
         Map<String, Integer> map = toMap();
         for (String key : map.keySet()){
-            if(map.get(key) >= DUPLICATE) features.add(key);
+            if(map.get(key) >= DUPLICATE && !stopwords.contains(key)) features.add(key);
         }
     }
 
